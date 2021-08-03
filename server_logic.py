@@ -67,8 +67,12 @@ def choose_move(data: dict) -> str:
     print(my_head)
     print(board_height)
 
-    if (my_head["y"] = board_height - 1) or (my_head["x"] = board_width - 1):
+    if (my_head["y"] == board_height - 1):
         possible_moves = "left"
+        
+    if (my_head["x"] == board_width - 1):
+        possible_moves = "down"
+
 
 
     # TODO Using information from 'data', don't let your Battlesnake pick a move that would hit its own body
