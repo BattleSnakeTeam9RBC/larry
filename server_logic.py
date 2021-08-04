@@ -34,6 +34,36 @@ def avoid_my_neck(my_head: Dict[str, int], my_body: List[dict], possible_moves: 
     return possible_moves
 
 
+def avoid_walls(my_head: Dict[str, int], board_height: int, board_width: int, possible_moves: List[str]):
+  #    2,0 | 2,1 | 2,2
+  #    1,0 | 1,1 | 1,2
+  #    0,0 | 0,1 | 2,2
+  if (my_head["y"] == board_height-1):
+    try:
+      possible_moves.remove("up")
+    except ValueError:
+      pass
+
+  if (my_head["y"] == 0):
+    try:
+      possible_moves.remove("down")
+    except ValueError:
+      pass
+
+  if (my_head["x"] == board_width-1):
+    try:
+      possible_moves.remove("right")
+    except ValueError:
+      pass
+
+  if (my_head["x"] == 0):
+    try:
+      possible_moves.remove("left")
+    except ValueError:
+      pass
+  
+  return possible_moves
+
 def choose_move(data: dict) -> str:
     """
     data: Dictionary of all Game Board data as received from the Battlesnake Engine.
@@ -62,18 +92,10 @@ def choose_move(data: dict) -> str:
 
     # TODO: Using information from 'data', find the edges of the board and don't let your Battlesnake move beyond them
     board_height = data["board"]["height"]
-    board_width = data["board"]["width"]
+    board_width = data["board"]["width"]    
 
-    print(my_head)
-    print(board_height)
-
-    if (my_head["y"] == board_height - 1):
-        possible_moves = "left"
-        
-    if (my_head["x"] == board_width - 1):
-        possible_moves = "down"
-
-
+    # hitting left wall check 
+    possible_moves = avoid_walls(my_head, board_height, board_width, possible_moves)
 
     # TODO Using information from 'data', don't let your Battlesnake pick a move that would hit its own body
 
@@ -84,6 +106,8 @@ def choose_move(data: dict) -> str:
     # Choose a random direction from the remaining possible_moves to move in, and then return that move
     move = random.choice(possible_moves)
     # TODO: Explore new strategies for picking a move that are better than random
+
+    print(my_head)
 
     print(f"{data['game']['id']} MOVE {data['turn']}: {move} picked from all valid options in {possible_moves}")
 
