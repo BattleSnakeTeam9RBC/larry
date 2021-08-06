@@ -95,7 +95,7 @@ def choose_move(data: dict) -> str:
     board_width = data["board"]["width"]    
 
     # hitting left wall check 
-    possible_moves = avoid_walls(my_head, board_height, board_width, possible_moves)
+    # possible_moves = avoid_walls(my_head, board_height, board_width, possible_moves)
 
     # TODO Using information from 'data', don't let your Battlesnake pick a move that would hit its own body
 
