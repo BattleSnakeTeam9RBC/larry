@@ -9,6 +9,7 @@ from the list of possible moves!
 """
 
 # board variables
+debug = True
 SPACE = 0
 KILL_ZONE = 1
 FOOD = 2
@@ -33,7 +34,6 @@ turn = 0
 survival_min = 50
 my_id = ''
 INITIAL_FEEDING = 3
-
 
 def avoid_my_neck(my_head: Dict[str, int], my_body: List[dict], possible_moves: List[str]) -> List[str]:
     """
@@ -68,15 +68,16 @@ def get_coords (o):
 
 # return coords to own tail
 def get_tail(data):
-    body = data['you']['body']['data']
-    tail = current_location(data)
-    for segment in body:
-        tail = get_coords(segment)
-    return tail
+  body = data['you']['body'][-1]
+  return get_coords(body)
+    # tail = current_location(data)
+    # for segment in body:
+    #     tail = get_coords(segment)
+    # return tail
 
 # return x,y coords of current head location
 def current_location(data):
-    return (data['you']['body']['data'][0]['x'], data['you']['body']['data'][0]['y'])
+    return get_coords(data['you']['head'])
 
 # seek closest food
 def hungry(data):
@@ -118,6 +119,59 @@ def calculate_direction(a, b, grid, data):
             direction = 0
     return direction
 
+def valid_move(d, grid, data):
+    global board_height, board_width
+    current = current_location(data)
+    print('CHECKING IF MOVE IS VALID!')
+    # directions = ['up', 'left', 'down', 'right']
+    # check up direction
+    if d == 0:
+        if current[1] - 1 < 0:
+            if debug: print('Up move is OFF THE MAP!')
+            return False
+        if grid[current[0]][current[1] - 1] <= DANGER:
+            if debug: print('Up move is VALID.')
+            return True
+        else:
+            if debug: print('Up move is FATAL!')
+            return False
+    #check left direction
+    if d == 1:
+        if current[0] - 1 < 0:
+            if debug: print('Left move is OFF THE MAP!')
+            return False
+        if grid[current[0] - 1][current[1]] <= DANGER:
+            if debug: print('Left move is VALID.')
+            return True
+        else:
+            if debug: print('Left move is FATAL!')
+            return False
+    # check down direction
+    if d == 2:
+        if current[1] + 1 > board_height - 1:
+            if debug: print('Down move is OFF THE MAP!')
+            return False
+        if grid[current[0]][current[1] + 1] <= DANGER:
+            if debug: print('Down move is VALID.')
+            return True
+        else:
+            if debug: print('Down move is FATAL!')
+            return False
+    # check right direction
+    if d == 3:
+        if current[0] + 1 > board_width - 1:
+            if debug: print('Right move is OFF THE MAP!')
+            return False
+        if grid[current[0] + 1][current[1]] <= DANGER:
+            if debug: print('Right move is VALID.')
+            return True
+        else:
+            if debug: print('Right move is FATAL!')
+            return False
+    # failsafe
+    if d > 3: print('valid_move FAILED! direction IS NOT ONE OF FOUR POSSIBLE MOVES!')
+    return True
+
 # astar pathfinding, from https://github.com/vllry/checkfront-battlesnake
 def astar(data, grid, destination, mode):
     print('MAP BUILT! CALCULATING PATH...')
@@ -128,14 +182,15 @@ def astar(data, grid, destination, mode):
     # set start location to current head location
     start = current_location(data)
     # on first 3 moves, point to closest food
-    if data['turn'] < INITIAL_FEEDING:
-        destination = closest_food(grid, data)
+    #if data['turn'] < INITIAL_FEEDING:
+        #destination = closest_food(grid, data)
     print('astar destination: ' + str(destination))
         # print("astar grid before search:")
         # print_f_scores(search_scores)
     open_set.append(start)
     # while openset is NOT empty keep searching
     while open_set:
+        #print("Open set containing ")
         lowest_cell = [9999, 9999] # x, y
         lowest_f = 9999
         # find cell with lowest f score
@@ -166,7 +221,7 @@ def astar(data, grid, destination, mode):
         for neighbor in search_scores[current[0]][current[1]].neighbors:
             neighbor_cell = search_scores[neighbor[0]][neighbor[1]]
             if neighbor[0] == destination[0] and neighbor[1] == destination[1]:
-                rint('FOUND A PATH! (neighbor)')
+                print('FOUND A PATH! (neighbor)')
                 neighbor_cell.previous = current
                 print("astar grid after search success:")
                 # retrace path back to origin to find optimal next move
@@ -177,7 +232,8 @@ def astar(data, grid, destination, mode):
                 # get direction of next optimal move
                 print('astar next move: ' + str(temp))
                 next_move = calculate_direction(start, temp, grid, data)
-                return best_move(next_move, data, grid)
+                #return best_move(next_move, data, grid)
+                return move
             # check if neighbor can be moved to
             if neighbor_cell.state < SNAKE_BODY:
                 # check if neighbor has already been evaluated
@@ -209,7 +265,8 @@ def astar(data, grid, destination, mode):
             tail = get_tail(data)
             move = astar(data, grid, tail, 'my_tail')
         
-        return best_move(move, data, grid)
+        return move
+        #return best_move(move, data, grid)
 
 
 # return map array
@@ -221,29 +278,25 @@ def build_map(data):
     grid = [ [SPACE for col in range(data["board"]["width"])] for row in range(data["board"]["width"])]
     turn = data['turn']
     # fill in food locations
-    for food in data['food']['data']:
+    for food in data['board']['food']:
         grid[food['x']][food['y']] = FOOD
     # fill in snake locations
-    for snake in data['snakes']['data']:
-        for segment in snake['body']['data']:
+    for snake in data['board']['snakes']:
+        for segment in snake['body']:
             # get each segment from data {snakes, data, body, data}
             grid[segment['x']][segment['y']] = SNAKE_BODY
         # mark snake head locations
         #if debug: print('Snake id = ' + str(snake['id']))
         #if debug: print('My id = ' + str(my_id))
         # mark tails as empty spaces only after turn 3
-        if debug:
-            if snake['id'] == my_id:
-                print('-1 body seg: ' + str(snake['body']['data'][-1]['x']) + ',' + str(snake['body']['data'][-1]['y']))
-                print('-2 body seg: ' + str(snake['body']['data'][-2]['x']) + ',' + str(snake['body']['data'][-2]['y']))
         #if turn > 3:
-        if snake['body']['data'][-1] != snake['body']['data'][-2]:
-            tempX = snake['body']['data'][-1]['x']
-            tempY = snake['body']['data'][-1]['y']
+        if snake['body'][-1] != snake['body'][-2]:
+            tempX = snake['body'][-1]['x']
+            tempY = snake['body'][-1]['y']
             grid[tempX][tempY] = SPACE
         # dont mark own head or own danger zones
         if snake['id'] == my_id: continue
-        head = get_coords(snake['body']['data'][0])
+        head = get_coords(snake['body'][0])
         grid[head[0]][head[1]] = ENEMY_HEAD
         # mark danger locations around enemy head
         # check down from head
@@ -270,25 +323,6 @@ def build_map(data):
     #if debug: print_map(grid)
     return grid
 
-# return coords of closest food to head
-# def closest_food(data):
-#     current = current_location(data)
-#     shortest_distance = -1
-#     closest_food = None
-#     foods = data['food']['data']
-#     # iterate over each piece of food
-#     for food in foods:
-#         food = get_coords(food)
-#         distance = get_distance(current, food)
-#         if shortest_distance < 0:
-#             shortest_distance = distance
-#             closest_food = food
-#         else:
-#             if distance < shortest_distance:
-#                 shortest_distance = distance
-#                 closest_food = food
-#     return closest_food
-
 # return coords of closest food to head, using grid
 def closest_food(grid, data):
     my_location = current_location(data)
@@ -306,8 +340,8 @@ def closest_food(grid, data):
 
 # return grid of empty Cells for astar search data
 def build_astar_grid(data, grid):
-    w = data['width']
-    h = data['height']
+    w = data['board']['width']
+    h = data['board']['height']
     astar_grid = [ [Cell(row, col) for col in range(h)] for row in range(w)]
     for i in range(w):
         for j in range(h):
@@ -380,17 +414,7 @@ def choose_move(data: dict) -> str:
     # print data for debugging
     print('REMAINING HEALTH IS ' + str(health) + ' ON TURN ' + str(turn) + '.')
     print('SENDING MOVE: ' + str(directions[direction]))
-    
-    # TODO Using information from 'data', don't let your Battlesnake pick a move that would hit its own body
 
-    # TODO: Using information from 'data', don't let your Battlesnake pick a move that would collide with another Battlesnake
+    print(f"{data['game']['id']} MOVE {data['turn']}: {directions[direction]} picked from all valid options in {possible_moves}")
 
-    # TODO: Using information from 'data', make your Battlesnake move towards a piece of food on the board
-
-    # Choose a random direction from the remaining possible_moves to move in, and then return that move
-
-    # TODO: Explore new strategies for picking a move that are better than random
-
-    print(f"{data['game']['id']} MOVE {data['turn']}: {move} picked from all valid options in {possible_moves}")
-
-    return move
+    return directions[direction]
