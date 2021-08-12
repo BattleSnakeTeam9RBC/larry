@@ -144,7 +144,7 @@ def valid_move(d, grid, data):
             print('board_heiigit ' + str(board_height))
             if debug: print('Up move is OFF THE MAP!')
             return False
-        if grid[current[0]][current[1] - 1] <= DANGER:
+        if grid[current[0]][current[1] + 1] <= DANGER:
             if debug: print('Up move is VALID.')
             print(str(grid[current[0]][current[1] - 1]))
             return True
@@ -167,7 +167,7 @@ def valid_move(d, grid, data):
         if current[1] - 1 < 0:
             if debug: print('Down move is OFF THE MAP!')
             return False
-        if grid[current[0]][current[1] + 1] <= DANGER:
+        if grid[current[0]][current[1] - 1] <= DANGER:
             if debug: print('Down move is VALID.')
             return True
         else:
@@ -227,6 +227,8 @@ def astar(data, grid, destination, mode):
             # get direction of next optimal move
             print('astar next move: ' + str(temp))
             next_move = calculate_direction(start, temp, grid, data)
+            if not valid_move(next_move, grid, data):
+                  next_move = choose_random(grid, data)
             return next_move
         # else continue searching
         current = lowest_cell
@@ -249,7 +251,8 @@ def astar(data, grid, destination, mode):
                 # get direction of next optimal move
                 print('astar next move: ' + str(temp))
                 next_move = calculate_direction(start, temp, grid, data)
-                #return best_move(next_move, data, grid)
+                if not valid_move(next_move, grid, data):
+                  next_move = choose_random(grid, data)
                 return next_move
             # check if neighbor can be moved to
             if neighbor_cell.state < SNAKE_BODY:
