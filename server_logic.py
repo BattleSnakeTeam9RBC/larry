@@ -105,7 +105,7 @@ def calculate_direction(a, b, grid, data):
         direction = 3
     elif x > 0:
         direction = 1
-    elif y < 0:
+    elif y > 0:
         direction = 2
     count = 0
     if not valid_move(direction, grid, data):
@@ -119,18 +119,34 @@ def calculate_direction(a, b, grid, data):
             direction = 0
     return direction
 
+def choose_random(grid, data):
+  next_valid = False
+  possible_directions = [0, 1, 2, 3]
+  while not next_valid:
+    print(possible_directions)
+    move = random.choice(possible_directions)
+    next_valid = valid_move(move, grid, data)
+    if not next_valid:
+        possible_directions.remove(move)
+  return move
+
 def valid_move(d, grid, data):
     global board_height, board_width
+    board_height = data["board"]["height"]
+    board_width = data["board"]["width"]
     current = current_location(data)
+    print("direction: " + str(d) + ' from ' + str(current[0]) + ', ' + str(current[1]))
     print('CHECKING IF MOVE IS VALID!')
     # directions = ['up', 'left', 'down', 'right']
     # check up direction
     if d == 0:
-        if current[1] - 1 < 0:
+        if current[1] + 1 > board_height - 1:
+            print('board_heiigit ' + str(board_height))
             if debug: print('Up move is OFF THE MAP!')
             return False
         if grid[current[0]][current[1] - 1] <= DANGER:
             if debug: print('Up move is VALID.')
+            print(str(grid[current[0]][current[1] - 1]))
             return True
         else:
             if debug: print('Up move is FATAL!')
@@ -148,7 +164,7 @@ def valid_move(d, grid, data):
             return False
     # check down direction
     if d == 2:
-        if current[1] + 1 > board_height - 1:
+        if current[1] - 1 < 0:
             if debug: print('Down move is OFF THE MAP!')
             return False
         if grid[current[0]][current[1] + 1] <= DANGER:
@@ -160,6 +176,7 @@ def valid_move(d, grid, data):
     # check right direction
     if d == 3:
         if current[0] + 1 > board_width - 1:
+            print('board_width ' + str(board_width))
             if debug: print('Right move is OFF THE MAP!')
             return False
         if grid[current[0] + 1][current[1]] <= DANGER:
@@ -258,9 +275,10 @@ def astar(data, grid, destination, mode):
     # if reach this point and open set is empty, no path
     if not open_set:
         print('COULD NOT FIND PATH!')
-        print("astar grid after search failure:")
+    
+        # This is terrible practice but it might work
+        move = choose_random(grid, data)
 
-        move = 2
         if mode == 'food':
             tail = get_tail(data)
             move = astar(data, grid, tail, 'my_tail')
@@ -414,7 +432,5 @@ def choose_move(data: dict) -> str:
     # print data for debugging
     print('REMAINING HEALTH IS ' + str(health) + ' ON TURN ' + str(turn) + '.')
     print('SENDING MOVE: ' + str(directions[direction]))
-
-    print(f"{data['game']['id']} MOVE {data['turn']}: {directions[direction]} picked from all valid options in {possible_moves}")
 
     return directions[direction]
