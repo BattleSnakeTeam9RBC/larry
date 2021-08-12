@@ -182,8 +182,8 @@ def astar(data, grid, destination, mode):
     # set start location to current head location
     start = current_location(data)
     # on first 3 moves, point to closest food
-    #if data['turn'] < INITIAL_FEEDING:
-        #destination = closest_food(grid, data)
+    if data['turn'] < INITIAL_FEEDING:
+        destination = closest_food(grid, data)
     print('astar destination: ' + str(destination))
         # print("astar grid before search:")
         # print_f_scores(search_scores)
@@ -233,7 +233,7 @@ def astar(data, grid, destination, mode):
                 print('astar next move: ' + str(temp))
                 next_move = calculate_direction(start, temp, grid, data)
                 #return best_move(next_move, data, grid)
-                return move
+                return next_move
             # check if neighbor can be moved to
             if neighbor_cell.state < SNAKE_BODY:
                 # check if neighbor has already been evaluated
